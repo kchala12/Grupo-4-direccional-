@@ -1,18 +1,30 @@
 """
-camara_detector.py  —  Librería detector pista v2 — OpenCV puro + Flask
+camara_detector.py  —  Detector pista v2 — OpenCV puro + Flask
 =====================================================================
-Uso como librería:
-    import camara_detector
-    threading.Thread(target=camara_detector.iniciar, daemon=True).start()
+Detecta (todo con OpenCV, sin YOLO):
+  • Línea ROJA        → cinta roja derecha         → contorno rojo en pantalla
+  • Línea AMARILLA    → cinta amarilla izquierda    → contorno amarillo en pantalla
+  • Línea CENTRAL     → promedio entre ambas        → línea morada punteada
+  • QR codes          → tienen borde azul físico    → contorno azul + texto
+  • Obstáculos        → cualquier objeto de tamaño
+                        significativo en zona frontal → contorno rojo + alerta
 
-    # Leer estado desde cualquier hilo:
-    camara_detector.estado["error_linea"]
-    camara_detector.estado["obstaculo_detectado"]
+Estado global exportable:
+  • OBSTACULO_DETECTADO  (bool)  → True cuando hay algo bloqueando el paso
+  • ERROR_LINEA          (int|None) → desplazamiento lateral respecto al centro
 
-Acceso web (streaming + estado):
-    http://IP:5000
+Cámara:
+  • Raspberry Pi  → Picamera2 (IMX219, cable CSI)
+  • PC / laptop   → webcam USB (detección automática)
+
+Uso:
+    python camara_detector.py
+Acceso:
+    http://127.0.0.1:5000
+    http://192.168.0.103:5000
 """
 
+import argparse
 import threading
 import time
 import json
@@ -20,6 +32,7 @@ import cv2
 import numpy as np
 from flask import Flask, Response, render_template_string
 
+# ── Picamera2 solo en Raspberry Pi ───────────────────────────────────
 try:
     from picamera2 import Picamera2
     PICAMERA_DISPONIBLE = True
@@ -30,26 +43,30 @@ except ImportError:
 # ══════════════════════════════════════════════
 #  COLORES BGR
 # ══════════════════════════════════════════════
-C_LINEA_ROJA     = (0,   0,   220)
-C_LINEA_AMARILLA = (0,   210, 210)
-C_CENTRO         = (200,   0, 200)
-C_QR             = (255,   0,   0)
-C_OBSTACULO      = (0,   0,   255)
-C_ALERTA         = (0,   0,   255)
-C_HUD            = (255, 255, 255)
+C_LINEA_ROJA     = (0,   0,   220)   # rojo       → contorno línea roja
+C_LINEA_AMARILLA = (0,   210, 210)   # amarillo   → contorno línea amarilla
+C_CENTRO         = (200,   0, 200)   # morado     → línea central
+C_QR             = (255,   0,   0)   # azul       → contorno QR
+C_OBSTACULO      = (0,   0,   255)   # rojo vivo  → contorno obstáculo
+C_ALERTA         = (0,   0,   255)   # rojo vivo  → texto alerta
+C_HUD            = (255, 255, 255)   # blanco     → HUD cámara
 
 
 # ══════════════════════════════════════════════
 #  PARÁMETROS DE DETECCIÓN DE OBSTÁCULOS
 # ══════════════════════════════════════════════
-ZONA_OBSTACULO_ANCHO = 0.6
-ZONA_OBSTACULO_ALTO  = 0.5
-AREA_MIN_OBSTACULO   = 1500
-UMBRAL_BLOQUEO       = 0.30
+# Fracción del ancho del frame que define la "zona de peligro" central
+ZONA_OBSTACULO_ANCHO   = 0.6   # 60 % central del frame
+# Fracción del alto del frame: solo miramos la mitad superior (zona frontal)
+ZONA_OBSTACULO_ALTO    = 0.5   # mitad superior
+# Área mínima (px²) de un contorno para considerarlo obstáculo real
+AREA_MIN_OBSTACULO     = 3000
+# Porcentaje del ancho de la zona que debe ocupar el obstáculo para frenar
+UMBRAL_BLOQUEO         = 0.30  # 30 % del ancho de zona → STOP
 
 
 # ══════════════════════════════════════════════
-#  ESTADO GLOBAL (accesible desde el principal)
+#  ESTADO GLOBAL
 # ══════════════════════════════════════════════
 ultimo_frame: bytes | None = None
 frame_lock   = threading.Lock()
@@ -57,17 +74,19 @@ frame_lock   = threading.Lock()
 codigos_leidos: set[str] = set()
 codigos_lock = threading.Lock()
 
+# Estado exportable para integración futura con motores
 estado = {
-    "obstaculo_detectado": False,
-    "error_linea": None,
+    "obstaculo_detectado": False,   # True → mandar STOP a motores
+    "error_linea": None,            # desplazamiento lateral en px
 }
 estado_lock = threading.Lock()
 
 
 # ══════════════════════════════════════════════
-#  1. DETECCIÓN DE LÍNEAS
+#  1. DETECCIÓN DE LÍNEAS (rojo / amarillo)
 # ══════════════════════════════════════════════
 def _centroide(mask, offset_y=0):
+    """Devuelve (cx, cy, contorno) del contorno más grande, o (None, None, None)."""
     cnts, _ = cv2.findContours(mask, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
     if not cnts:
         return None, None, None
@@ -83,17 +102,24 @@ def _centroide(mask, offset_y=0):
 
 
 def detectar_y_dibujar_lineas(frame: np.ndarray):
+    """
+    Detecta línea ROJA y AMARILLA en la mitad inferior del frame.
+    Dibuja contornos, centroides y línea guía central.
+    Retorna (frame, error_lateral).
+    """
     h, w   = frame.shape[:2]
     oy     = h // 2
     roi    = frame[oy:, :]
     hsv    = cv2.cvtColor(roi, cv2.COLOR_BGR2HSV)
     kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
 
+    # Máscara ROJA (el rojo en HSV ocupa dos rangos)
     mask_r1 = cv2.inRange(hsv, np.array([0,   120,  70]), np.array([10,  255, 255]))
     mask_r2 = cv2.inRange(hsv, np.array([170, 120,  70]), np.array([180, 255, 255]))
     mask_r  = cv2.bitwise_or(mask_r1, mask_r2)
     mask_r  = cv2.morphologyEx(mask_r, cv2.MORPH_CLOSE, kernel)
 
+    # Máscara AMARILLA
     mask_a = cv2.inRange(hsv, np.array([18, 80, 80]), np.array([35, 255, 255]))
     mask_a = cv2.morphologyEx(mask_a, cv2.MORPH_CLOSE, kernel)
 
@@ -140,30 +166,56 @@ def detectar_y_dibujar_lineas(frame: np.ndarray):
 
 
 # ══════════════════════════════════════════════
-#  2. DETECCIÓN DE OBSTÁCULOS
+#  2. DETECCIÓN DE OBSTÁCULOS (cualquier objeto)
 # ══════════════════════════════════════════════
 def detectar_y_dibujar_obstaculos(frame: np.ndarray) -> tuple[np.ndarray, bool]:
+    """
+    Detecta cualquier obstáculo físico en la zona frontal del robot,
+    independientemente del color.
+
+    Estrategia:
+      1. Recortar solo la zona frontal (mitad superior, franja central).
+      2. Convertir a escala de grises y aplicar umbral adaptativo para
+         separar objetos del fondo de pista.
+      3. Filtrar contornos por área mínima y posición horizontal.
+      4. Si el obstáculo supera el umbral de bloqueo → alerta STOP.
+
+    Retorna (frame_anotado, obstaculo_bloqueando).
+    """
     h, w = frame.shape[:2]
 
-    zona_y2    = int(h * ZONA_OBSTACULO_ALTO)
-    zona_x1    = int(w * (1 - ZONA_OBSTACULO_ANCHO) / 2)
-    zona_x2    = int(w * (1 + ZONA_OBSTACULO_ANCHO) / 2)
+    # ── Definir zona de análisis ────────────────────────────────────────
+    zona_y2 = int(h * ZONA_OBSTACULO_ALTO)          # límite inferior de la zona
+    zona_x1 = int(w * (1 - ZONA_OBSTACULO_ANCHO) / 2)
+    zona_x2 = int(w * (1 + ZONA_OBSTACULO_ANCHO) / 2)
     ancho_zona = zona_x2 - zona_x1
 
     roi = frame[0:zona_y2, zona_x1:zona_x2]
 
+    # Dibujar zona de vigilancia en el frame
     cv2.rectangle(frame, (zona_x1, 0), (zona_x2, zona_y2), (80, 80, 80), 1)
     cv2.putText(frame, "ZONA FRONTAL", (zona_x1 + 4, 15),
                 cv2.FONT_HERSHEY_SIMPLEX, 0.4, (80, 80, 80), 1)
 
-    gris  = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
-    blur  = cv2.GaussianBlur(gris, (5, 5), 0)
-    edges = cv2.Canny(blur, 30, 90)
+    # ── Preprocesado ────────────────────────────────────────────────────
+    gris   = cv2.cvtColor(roi, cv2.COLOR_BGR2GRAY)
+    blur   = cv2.GaussianBlur(gris, (7, 7), 0)
 
-    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (7, 7))
-    thresh = cv2.dilate(edges, kernel, iterations=2)
+    # Umbral adaptativo: extrae cualquier objeto con contraste respecto al fondo
+    thresh = cv2.adaptiveThreshold(
+        blur, 255,
+        cv2.ADAPTIVE_THRESH_GAUSSIAN_C,
+        cv2.THRESH_BINARY_INV,
+        blockSize=31,
+        C=8
+    )
+
+    # Morfología para limpiar ruido y unir partes del mismo objeto
+    kernel = cv2.getStructuringElement(cv2.MORPH_RECT, (5, 5))
     thresh = cv2.morphologyEx(thresh, cv2.MORPH_CLOSE, kernel)
+    thresh = cv2.morphologyEx(thresh, cv2.MORPH_OPEN,  kernel)
 
+    # ── Buscar contornos ────────────────────────────────────────────────
     cnts, _ = cv2.findContours(thresh, cv2.RETR_EXTERNAL, cv2.CHAIN_APPROX_SIMPLE)
 
     obstaculo_bloqueando = False
@@ -173,22 +225,37 @@ def detectar_y_dibujar_obstaculos(frame: np.ndarray) -> tuple[np.ndarray, bool]:
         area = cv2.contourArea(cnt)
         if area < AREA_MIN_OBSTACULO:
             continue
+
         x, y, bw, bh = cv2.boundingRect(cnt)
-        if y <= 3:
+
+        # Ignorar contornos que toquen el borde superior (probable fondo lejano)
+        if y == 0:
             continue
+
         obstaculos_validos.append((cnt, x, y, bw, bh, area))
+
+        # ¿Bloquea el paso? → el objeto ocupa buena parte del ancho de la zona
         if bw >= ancho_zona * UMBRAL_BLOQUEO:
             obstaculo_bloqueando = True
 
+    # ── Dibujar en el frame original (offset por la ROI) ────────────────
     for cnt, x, y, bw, bh, area in obstaculos_validos:
+        # Coordenadas absolutas
         ax, ay = x + zona_x1, y
         color = C_OBSTACULO if bw >= ancho_zona * UMBRAL_BLOQUEO else (0, 200, 200)
-        cv2.drawContours(frame, [cnt + np.array([zona_x1, 0])], -1, color, 2)
+
+        cv2.drawContours(
+            frame,
+            [cnt + np.array([zona_x1, 0])],
+            -1, color, 2
+        )
         cv2.rectangle(frame, (ax, ay), (ax + bw, ay + bh), color, 2)
+
         label = f"OBJ {int(area/100)}u"
         cv2.putText(frame, label, (ax, ay - 6),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.5, color, 2)
 
+    # ── Alerta visual si hay bloqueo ────────────────────────────────────
     if obstaculo_bloqueando:
         cv2.rectangle(frame, (0, 0), (w, h), C_ALERTA, 4)
         cv2.putText(frame, "!! OBSTACULO — STOP !!",
@@ -199,14 +266,20 @@ def detectar_y_dibujar_obstaculos(frame: np.ndarray) -> tuple[np.ndarray, bool]:
 
 
 # ══════════════════════════════════════════════
-#  3. DETECCIÓN DE QR
+#  3. DETECCIÓN DE QR (borde azul físico)
 # ══════════════════════════════════════════════
 def detectar_y_dibujar_qr(frame: np.ndarray, qr_det) -> np.ndarray:
+    """
+    Detecta QR codes (tienen borde azul físico).
+    Dibuja contorno azul + texto del QR.
+    """
     datos_qr, puntos, _ = qr_det.detectAndDecode(frame)
+
     if datos_qr and puntos is not None:
         pts = puntos[0].astype(int)
         for i in range(4):
             cv2.line(frame, tuple(pts[i]), tuple(pts[(i + 1) % 4]), C_QR, 3)
+
         x0 = pts[:, 0].min()
         y0 = pts[:, 1].min()
         label = datos_qr[:40]
@@ -214,8 +287,10 @@ def detectar_y_dibujar_qr(frame: np.ndarray, qr_det) -> np.ndarray:
         cv2.rectangle(frame, (x0, y0 - th - 8), (x0 + tw + 4, y0), (0, 0, 0), -1)
         cv2.putText(frame, label, (x0 + 2, y0 - 4),
                     cv2.FONT_HERSHEY_SIMPLEX, 0.55, C_QR, 2)
+
         with codigos_lock:
             codigos_leidos.add(datos_qr)
+
     return frame
 
 
@@ -241,7 +316,8 @@ PAGINA_HTML = """
     #stream-container {
       border: 2px solid #00e6a0; border-radius: 8px;
       overflow: hidden; box-shadow: 0 0 24px #00e6a044;
-      max-width: 860px; width: 100%; position: relative;
+      max-width: 860px; width: 100%;
+      position: relative;
     }
     #stream-container img { width: 100%; display: block; }
     #alerta-overlay {
@@ -260,60 +336,91 @@ PAGINA_HTML = """
     #leyenda { display: flex; gap: 18px; flex-wrap: wrap; }
     .item { display: flex; align-items: center; gap: 8px; font-size: 0.82rem; }
     .dot  { width: 13px; height: 13px; border-radius: 50%; flex-shrink: 0; }
-    #estado-box { display: flex; gap: 24px; align-items: center; flex-wrap: wrap; }
+    #estado-box {
+      display: flex; gap: 24px; align-items: center; flex-wrap: wrap;
+    }
     .estado-item { font-size: 0.9rem; }
-    .badge { display: inline-block; padding: 3px 10px; border-radius: 4px; font-weight: bold; font-size: 0.85rem; }
+    .badge {
+      display: inline-block; padding: 3px 10px; border-radius: 4px;
+      font-weight: bold; font-size: 0.85rem;
+    }
     .badge.ok   { background: #1a4d2e; color: #00e676; }
     .badge.stop { background: #4d1a1a; color: #ff5252; }
-    #lista-qr { list-style: none; display: flex; flex-direction: column; gap: 6px; max-height: 180px; overflow-y: auto; }
-    #lista-qr li { background: #252525; border-left: 3px solid #0000ff; padding: 6px 10px; border-radius: 4px; font-size: 0.83rem; word-break: break-all; }
+    #lista-qr {
+      list-style: none; display: flex; flex-direction: column;
+      gap: 6px; max-height: 180px; overflow-y: auto;
+    }
+    #lista-qr li {
+      background: #252525; border-left: 3px solid #0000ff;
+      padding: 6px 10px; border-radius: 4px;
+      font-size: 0.83rem; word-break: break-all;
+    }
     #lista-qr li a { color: #58c8ff; text-decoration: none; }
+    #lista-qr li a:hover { text-decoration: underline; }
     #empty-msg { color: #555; font-size: 0.83rem; background: none !important; border: none !important; }
     footer { font-size: 0.75rem; color: #444; margin-top: auto; padding-bottom: 8px; }
   </style>
 </head>
 <body>
   <h1>🛣️ DETECTOR DE PISTA v2</h1>
+
   <div id="stream-container">
     <img src="/video_feed" alt="Stream de cámara">
     <div id="alerta-overlay">⚠ OBSTÁCULO DETECTADO — STOP</div>
   </div>
+
   <div class="panel">
     <h2>📊 ESTADO</h2>
     <div id="estado-box">
-      <div class="estado-item">Obstáculo: <span id="badge-obs" class="badge ok">LIBRE</span></div>
-      <div class="estado-item">Error línea: <span id="error-linea">—</span></div>
+      <div class="estado-item">
+        Obstáculo: <span id="badge-obs" class="badge ok">LIBRE</span>
+      </div>
+      <div class="estado-item">
+        Error línea: <span id="error-linea">—</span>
+      </div>
     </div>
   </div>
+
   <div class="panel">
     <h2>🎨 LEYENDA</h2>
     <div id="leyenda">
       <div class="item"><div class="dot" style="background:#dc0000"></div>Línea roja</div>
       <div class="item"><div class="dot" style="background:#00d2d2"></div>Línea amarilla</div>
       <div class="item"><div class="dot" style="background:#c800c8"></div>Centro / guía</div>
-      <div class="item"><div class="dot" style="background:#0000ff"></div>QR</div>
-      <div class="item"><div class="dot" style="background:#ff0000"></div>Obstáculo STOP</div>
-      <div class="item"><div class="dot" style="background:#00c8c8"></div>Obstáculo aviso</div>
+      <div class="item"><div class="dot" style="background:#0000ff"></div>QR (borde azul)</div>
+      <div class="item"><div class="dot" style="background:#ff0000"></div>Obstáculo (STOP)</div>
+      <div class="item"><div class="dot" style="background:#00c8c8"></div>Obstáculo (aviso)</div>
     </div>
   </div>
+
   <div class="panel">
     <h2>🔍 CÓDIGOS QR DETECTADOS</h2>
-    <ul id="lista-qr"><li id="empty-msg">Esperando códigos QR...</li></ul>
+    <ul id="lista-qr">
+      <li id="empty-msg">Esperando códigos QR...</li>
+    </ul>
   </div>
+
   <footer>Detector pista v2 · OpenCV · Streaming MJPEG</footer>
+
   <script>
     async function actualizarEstado() {
       try {
         const data = await (await fetch('/estado')).json();
+
+        // Obstáculo
         const badge = document.getElementById('badge-obs');
         const overlay = document.getElementById('alerta-overlay');
         if (data.obstaculo_detectado) {
-          badge.textContent = 'STOP'; badge.className = 'badge stop';
+          badge.textContent = 'STOP';
+          badge.className = 'badge stop';
           overlay.style.display = 'block';
         } else {
-          badge.textContent = 'LIBRE'; badge.className = 'badge ok';
+          badge.textContent = 'LIBRE';
+          badge.className = 'badge ok';
           overlay.style.display = 'none';
         }
+
+        // Error línea
         const el = document.getElementById('error-linea');
         if (data.error_linea !== null) {
           const signo = data.error_linea > 0 ? '→' : '←';
@@ -323,6 +430,7 @@ PAGINA_HTML = """
         }
       } catch (_) {}
     }
+
     async function actualizarQRs() {
       try {
         const data = await (await fetch('/qr_list')).json();
@@ -340,27 +448,33 @@ PAGINA_HTML = """
         }
       } catch (_) {}
     }
+
     setInterval(actualizarEstado, 300);
     setInterval(actualizarQRs, 2000);
-    actualizarEstado(); actualizarQRs();
+    actualizarEstado();
+    actualizarQRs();
   </script>
 </body>
 </html>
 """
+
 
 # ══════════════════════════════════════════════
 #  FLASK
 # ══════════════════════════════════════════════
 app = Flask(__name__)
 
+
 @app.route('/')
 def index():
     return render_template_string(PAGINA_HTML)
+
 
 @app.route('/video_feed')
 def video_feed():
     return Response(_generar_frames(),
                     mimetype='multipart/x-mixed-replace; boundary=frame')
+
 
 @app.route('/qr_list')
 def qr_list():
@@ -371,14 +485,21 @@ def qr_list():
         mimetype='application/json'
     )
 
+
 @app.route('/estado')
 def estado_api():
+    """
+    Endpoint JSON para integración futura con el controlador de motores.
+    Ejemplo de respuesta:
+      { "obstaculo_detectado": true, "error_linea": -42 }
+    """
     with estado_lock:
         s = dict(estado)
     return app.response_class(
         response=json.dumps(s),
         mimetype='application/json'
     )
+
 
 def _generar_frames():
     while True:
@@ -394,7 +515,7 @@ def _generar_frames():
 # ══════════════════════════════════════════════
 #  HILO DE CAPTURA
 # ══════════════════════════════════════════════
-def _hilo_camara() -> None:
+def hilo_camara() -> None:
     global ultimo_frame
 
     qr_det = cv2.QRCodeDetector()
@@ -422,21 +543,24 @@ def _hilo_camara() -> None:
 
     while True:
         if picam is not None:
-            frame = picam.capture_array()   # BGR directo, sin conversión
+            frame = cv2.cvtColor(picam.capture_array(), cv2.COLOR_RGB2BGR)
         else:
             ret, frame = cap.read()
             if not ret:
                 time.sleep(0.1)
                 continue
 
-        frame, error   = detectar_y_dibujar_lineas(frame)
-        frame, hay_obs = detectar_y_dibujar_obstaculos(frame)
-        frame          = detectar_y_dibujar_qr(frame, qr_det)
+        # ── Las 3 detecciones ─────────────────────────────────────────
+        frame, error       = detectar_y_dibujar_lineas(frame)
+        frame, hay_obs     = detectar_y_dibujar_obstaculos(frame)
+        frame              = detectar_y_dibujar_qr(frame, qr_det)
 
+        # Actualizar estado global
         with estado_lock:
             estado["obstaculo_detectado"] = hay_obs
             estado["error_linea"]         = error
 
+        # HUD
         cv2.putText(frame, label_cam,
                     (10, 25), cv2.FONT_HERSHEY_SIMPLEX, 0.6, C_HUD, 2)
 
@@ -452,22 +576,24 @@ def _hilo_camara() -> None:
 
 
 # ══════════════════════════════════════════════
-#  PUNTO DE ENTRADA COMO LIBRERÍA
+#  ENTRY POINT
 # ══════════════════════════════════════════════
-def iniciar(host="0.0.0.0", port=5000):
-    """Llama esto desde el código principal para arrancar cámara + Flask."""
-    threading.Thread(target=_hilo_camara, daemon=True).start()
-    print(f"[CAMARA] Streaming en http://{host}:{port}")
-    app.run(host=host, port=port, threaded=True)
-
-
-# ══════════════════════════════════════════════
-#  STANDALONE (python camara_detector.py)
-# ══════════════════════════════════════════════
-if __name__ == "__main__":
-    import argparse
-    parser = argparse.ArgumentParser()
+def main() -> None:
+    parser = argparse.ArgumentParser(description="Detector pista v2")
     parser.add_argument("--port", type=int, default=5000)
     parser.add_argument("--host", default="0.0.0.0")
     args = parser.parse_args()
-    iniciar(host=args.host, port=args.port)
+
+    threading.Thread(target=hilo_camara, daemon=True).start()
+
+    print(f"\n{'='*55}")
+    print(f"  Detector Pista v2 iniciado")
+    print(f"  Local  : http://127.0.0.1:{args.port}")
+    print(f"  Estado : http://127.0.0.1:{args.port}/estado")
+    print(f"{'='*55}\n")
+
+    app.run(host=args.host, port=args.port, threaded=True)
+
+
+if __name__ == "__main__":
+    main()

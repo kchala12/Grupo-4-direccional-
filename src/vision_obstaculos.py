@@ -46,7 +46,7 @@ ZONA_VERTICAL_FRACCION = 0.5
 
 # Porcentaje de pixeles "de primer plano" en la zona de interés
 # que dispara la parada. Rango recomendado: 0.05 – 0.20.
-UMBRAL_DETECCION = 0.08
+UMBRAL_DETECCION = 0.05
 
 # Distancia mínima entre contornos (píxeles) para considerarlos
 # un obstáculo real y no ruido.
@@ -94,7 +94,7 @@ class VisionObstaculos:
         indice_camara=0,
         resolucion=(640, 480),
         fps_objetivo=15,
-        mostrar_ventana=False,
+        mostrar_ventana=True,
         usar_gstreamer=True,
     ):
         self.robot           = robot

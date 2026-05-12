@@ -8,14 +8,13 @@ Contenido de la carpeta
 
 **Dentro de esta sección se podrán encontrar documentos como:**
 
-Acta de constitución del proyecto.
-Informes de avance.
-Bitácoras de desarrollo y pruebas.
-Manuales técnicos y de usuario.
-Diagramas y esquemas.
-Evidencias y resultados de pruebas.
-Documentación académica y complementaria.
-Propósito
+- Acta de constitución del proyecto
+- Informes de avance
+- Bitácoras de desarrollo y pruebas
+- Manuales técnicos y de usuario
+- Documentación académica y complementaria
+
+**Propósito**
 
 **El objetivo de esta carpeta es centralizar y organizar toda la información documental del proyecto, 
 facilitando el seguimiento de avances, la consulta de información técnica y la gestión del desarrollo del robot autónomo.**

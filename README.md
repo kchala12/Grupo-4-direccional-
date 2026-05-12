@@ -15,22 +15,10 @@ El sistema utiliza **códigos QR** como referencias de navegación y una cámara
 
 Objetivo
 
-Desarrollar un AGV funcional que complete de forma autónoma un ciclo de recolección y distribución de carga hacia tres estaciones destino, sin intervención humana, en un plazo de **16 semanas**.
+Desarrollar un Robot funcional que complete de forma autónoma un ciclo de recolección y distribución de carga hacia tres estaciones destino, sin intervención humana, en un plazo de **16 semanas**.
 
 ---
 
-Tecnologías principales
-
-| Componente | Descripción |
-|---|---|
-| Raspberry Pi 5 (8GB) | Unidad de procesamiento central |
-| Cámara IMX219 | Captura y detección de códigos QR |
-| ESP32 | Control de comunicación WiFi/Bluetooth |
-| Motores JGY 370 + encoder | Tracción diferencial |
-| Batería LiPo 11.1V 5000mAh | Fuente de alimentación autónoma |
-| OpenCV / Python | Visión artificial y navegación |
-
----
 
 Equipo
 

@@ -36,7 +36,7 @@ Grupo-4-direccional/
 ### 📁 [Documentacion](https://github.com/kchala12/Grupo-4-direccional-/tree/main/Documentacíon)
 Contiene toda la documentación formal del proyecto: matriz de documentos, cronogramas, actas de reunión, informes de avance semanales y el informe final. También incluye presentaciones y entregables académicos requeridos por la universidad.
  
-### 📁 Electronica
+### 📁 [Electronica](https://github.com/kchala12/Grupo-4-direccional-/tree/main/Electronica)
 Aquí se encuentran los esquemas eléctricos del sistema, diagramas de conexión de los componentes, diseños de PCB, selección y hoja de datos de los actuadores y drivers utilizados. También incluye el firmware de los microcontroladores encargados del control de motores y señales de los sensores.
  
 ### 📁 Mecanica

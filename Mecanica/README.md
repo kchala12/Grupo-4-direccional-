@@ -10,7 +10,7 @@
 ### 📁 acoples
 Diseños y dibujos técnicos con cotas de los elementos de acople del robot. Incluye las piezas de unión entre el sistema de tracción y el chasis, adaptadores de motores y cualquier componente de transmisión mecánica. Los planos cuentan con acotación completa para su fabricación o impresión 3D.
 
-### 📁 curpo carro
+### 📁 cuerpo carro
 Modelos y diseños del cuerpo principal del robot (chasis). Contiene las iteraciones del diseño estructural del vehículo, incluyendo la distribución de componentes, soporte de carga, montaje de la cámara IMX219 y los últimos cambios aplicados al diseño del carro.
 
 ### 📁 objetos

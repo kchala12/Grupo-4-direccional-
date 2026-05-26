@@ -1,20 +1,16 @@
-En esta carpeta se almacenará toda la documentación relacionada con el desarrollo del proyecto **C.A.L.V.O.S.** 
-**(Control Autónomo Logístico Vehicular Optimizado de Suministros).**
+## Contenido de la Carpeta##
 
-Aquí se incluirán los diferentes documentos técnicos, académicos y administrativos generados durante las etapas de diseño, 
-desarrollo, implementación y validación del sistema.
+**Acta De Constitución**
+Documento oficial que formaliza el inicio del proyecto. Contiene el alcance general, los objetivos planteados, los recursos asignados, los roles del equipo y las firmas de aprobación por parte del director y asesores.
 
-Contenido de la carpeta
+**Bitácoras**
+Registro cronológico del avance semanal del proyecto. Cada bitácora documenta las actividades realizadas, decisiones tomadas, problemas encontrados y los compromisos para la siguiente sesión de trabajo.
 
-**Dentro de esta sección se podrán encontrar documentos como:**
+**Informes**
+Informes de avance y el informe final del proyecto. Incluye la descripción técnica del sistema desarrollado, resultados obtenidos, análisis y conclusiones del semestre integrador.
 
-- Acta de constitución del proyecto
-- Informes de avance
-- Bitácoras de desarrollo y pruebas
-- Manuales técnicos y de usuario
-- Documentación académica y complementaria
+**Manual de Usuario**
+Guía de operación del robot. Explica paso a paso cómo encender el sistema, configurar las estaciones, ejecutar el ciclo autónomo y solucionar problemas comunes durante la operación.
 
-**Propósito**
-
-**El objetivo de esta carpeta es centralizar y organizar toda la información documental del proyecto, 
-facilitando el seguimiento de avances, la consulta de información técnica y la gestión del desarrollo del robot autónomo.**
+**Presentaciones**
+Diapositivas utilizadas en las exposiciones y sustentaciones del proyecto ante docentes y jurados a lo largo del semestre.

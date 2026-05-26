@@ -1,1 +1,16 @@
-Este repositorio contiene toda la documentación y desarrollo electrónico del proyecto, incluyendo esquemáticos, diseño PCB, simulaciones, firmware, datasheets, pruebas y documentación técnica. Dentro del proyecto se manejan archivos de diseño electrónico como .sch, .pcb, .brd, .gbr y .drl, utilizados para esquemas y fabricación de tarjetas PCB; archivos de simulación como .asc, .cir y proyectos de Proteus o LTspice; además de código fuente para sistemas embebidos en formatos .ino, .c, .cpp, .h y .py. También se incluyen modelos 3D .step y .stl, hojas técnicas en PDF y registros de pruebas o mediciones, con el fin de mantener organizada toda la información relacionada con el desarrollo, mantenimiento y futuras mejoras del sistema electrónico.
+Descripción de Carpetas
+Archivos .gbr
+
+Esta carpeta contiene los archivos Gerber (.gbr) utilizados para la fabricación de la tarjeta PCB. Estos archivos almacenan la información necesaria para el corte, perforación, pistas de cobre, máscara de soldadura y serigrafía de la placa electrónica. La versión aquí almacenada corresponde a los archivos enviados al fabricante en China para la producción de la PCB.
+
+Imágenes Electrónica
+
+Contiene imágenes de referencia relacionadas con el desarrollo electrónico del proyecto, tales como diagramas, capturas del diseño PCB, evidencias de montaje, conexiones y pruebas realizadas durante el desarrollo.
+
+PCB
+
+Incluye los archivos editables y de diseño de la tarjeta electrónica, permitiendo realizar modificaciones, mantenimiento y futuras mejoras sobre el circuito impreso del sistema.
+
+Objetivo del Repositorio
+
+El propósito principal de este repositorio es mantener organizada toda la documentación electrónica del proyecto, facilitando el control de versiones, respaldo de archivos y colaboración durante las etapas de diseño, fabricación y pruebas del sistema electrónico.

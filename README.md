@@ -17,6 +17,7 @@ El sistema utiliza **códigos QR** como referencias de navegación y una cámara
 
 Desarrollar un robot funcional que complete de forma autónoma un ciclo de recolección y distribución de carga hacia tres estaciones destino con traccion diferencial, **sin intervención humana**, en un plazo de **16 semanas**.
 
+
 ---
 
 ##  Estructura del Repositorio
@@ -32,7 +33,17 @@ Grupo-4-direccional/
 ├── LICENSE
 └── README.md
 ```
-
+### 📁 Documentacion
+Contiene toda la documentación formal del proyecto: matriz de documentos, cronogramas, actas de reunión, informes de avance semanales y el informe final. También incluye presentaciones y entregables académicos requeridos por la universidad.
+ 
+### 📁 Electronica
+Aquí se encuentran los esquemas eléctricos del sistema, diagramas de conexión de los componentes, diseños de PCB, selección y hoja de datos de los actuadores y drivers utilizados. También incluye el firmware de los microcontroladores encargados del control de motores y señales de los sensores.
+ 
+### 📁 Mecanica
+Contiene los diseños CAD del chasis del robot, planos técnicos de las piezas fabricadas o impresas en 3D, ensamblajes del sistema de tracción, soporte de carga y montaje de la cámara. Incluye también los archivos de simulación estructural y las memorias de cálculo de resistencia y peso.
+ 
+### 📁 src
+Código fuente principal del sistema autónomo. Incluye los módulos de visión artificial para la detección de códigos QR, algoritmos de navegación y control de trayectoria, lógica de gestión de estaciones y comunicación entre subsistemas. Todo desarrollado en Python sobre Raspberry Pi 5.
 ---
 
 

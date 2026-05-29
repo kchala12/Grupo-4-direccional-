@@ -52,7 +52,7 @@ python calibrar_encoders.py
 ### Ejecutar el sistema principal
 
 ```bash
-python principal16.py
+python principal19.py
 ```
 
 ---
@@ -62,7 +62,7 @@ python principal16.py
 ```
 principal16.py
     ├── camara_detector27.py   →  Detección de códigos QR
-    └── motor_control7.py      →  Control de motores y tracción
+    └── motor_control9.py      →  Control de motores y tracción
 ```
 
 ---

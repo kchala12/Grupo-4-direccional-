@@ -1,4 +1,4 @@
-##Contenido de la Carpeta
+#Contenido de la Carpeta
 
 Esta carpeta contiene toda la documentación técnica, administrativa y académica desarrollada durante la ejecución del proyecto integrador del vehículo autónomo. Aquí se almacenan los archivos relacionados con la planeación, seguimiento, desarrollo, validación y presentación final del sistema, permitiendo mantener un control organizado de la información generada a lo largo del semestre.
 

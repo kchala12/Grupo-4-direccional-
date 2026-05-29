@@ -38,12 +38,14 @@ INTERVALO_S      = 0.1
 GIROS = {
     "derecha_interseccion": {
         "delay_ms":    4800,
+        "delay_mm":    None,  # si tiene valor usa encoders en lugar de ms
         "recto_ms":    0,
         "vel":         60,
         "duracion_ms": 700,
     },
     "derecha_salida": {
         "delay_ms":    1000,
+        "delay_mm":    None,
         "recto_ms":    9200,
         "vel":         60,
         "duracion_ms": 900,
@@ -56,6 +58,7 @@ GIROS = {
 #  espera_ms: tiempo detenido esperando la carga
 # ══════════════════════════════════════════════
 DELAY_ANTES_CARGA_MS = 3000
+ANTES_CARGA_MM       = None   # si tiene valor usa encoders en lugar de ms
 DELAY_CARGA_MS       = 5000
 
 # ══════════════════════════════════════════════
@@ -267,7 +270,25 @@ def _ejecutar_giro(config_nombre):
     print(f"{C.INFO}[GIRO] {config_nombre} — delay:{cfg['delay_ms']}ms "
           f"recto:{cfg.get('recto_ms',0)}ms vel:{cfg['vel']} dur:{cfg['duracion_ms']}ms{C.RESET}")
 
-    if cfg["delay_ms"] > 0:
+    if cfg.get("delay_mm") is not None:
+        M1_MM = (2 * 3.14159 * 30.0) / 3816
+        M2_MM = (2 * 3.14159 * 30.0) / 2689
+        obj1  = cfg["delay_mm"] / M1_MM
+        obj2  = cfg["delay_mm"] / M2_MM
+        c1_0  = motor_control.enc["c1"]
+        c2_0  = motor_control.enc["c2"]
+        print(f"{C.INFO}[GIRO] Navegando {cfg['delay_mm']}mm con encoders{C.RESET}")
+        while True:
+            with _autonomo_lock:
+                if not _autonomo:
+                    return
+            d1 = abs(motor_control.enc["c1"] - c1_0)
+            d2 = abs(motor_control.enc["c2"] - c2_0)
+            if (d1 / obj1 + d2 / obj2) / 2 >= 1.0:
+                break
+            _navegar_normal()
+            time.sleep(0.02)
+    elif cfg["delay_ms"] > 0:
         _navegar_pid(cfg["delay_ms"] / 1000.0)
 
     if cfg.get("recto_ms", 0) > 0:
@@ -311,7 +332,7 @@ def _ejecutar_descarga(numero, tag_id):
                     return
             d1 = abs(motor_control.enc["c1"] - c1_0)
             d2 = abs(motor_control.enc["c2"] - c2_0)
-            if d1 >= obj1 and d2 >= obj2:
+            if (d1 / obj1 + d2 / obj2) / 2 >= 1.0:
                 break
             _navegar_normal()
             time.sleep(0.02)
@@ -350,8 +371,27 @@ def _hilo_autonomo(stop_ev):
         # FASE 2: navegar hasta dejar de ver tag 1 y esperar carga
         print(f"{C.WARN}[CARGA] Esperando pasar el tag...{C.RESET}")
         _esperar_sin_tag(1)
-        print(f"{C.WARN}[CARGA] Navegando al punto — {DELAY_ANTES_CARGA_MS}ms{C.RESET}")
-        _navegar_pid(DELAY_ANTES_CARGA_MS / 1000.0)
+        if ANTES_CARGA_MM is not None:
+            M1_MM = (2 * 3.14159 * 30.0) / 3816
+            M2_MM = (2 * 3.14159 * 30.0) / 2689
+            obj1  = ANTES_CARGA_MM / M1_MM
+            obj2  = ANTES_CARGA_MM / M2_MM
+            c1_0  = motor_control.enc["c1"]
+            c2_0  = motor_control.enc["c2"]
+            print(f"{C.WARN}[CARGA] Navegando {ANTES_CARGA_MM}mm con encoders{C.RESET}")
+            while True:
+                with _autonomo_lock:
+                    if not _autonomo:
+                        break
+                d1 = abs(motor_control.enc["c1"] - c1_0)
+                d2 = abs(motor_control.enc["c2"] - c2_0)
+                if (d1 / obj1 + d2 / obj2) / 2 >= 1.0:
+                    break
+                _navegar_normal()
+                time.sleep(0.02)
+        else:
+            print(f"{C.WARN}[CARGA] Navegando al punto — {DELAY_ANTES_CARGA_MS}ms{C.RESET}")
+            _navegar_pid(DELAY_ANTES_CARGA_MS / 1000.0)
         print(f"{C.WARN}[CARGA] Esperando carga — ultrasonido < {DIST_CARGA_CM}cm{C.RESET}")
         motor_control.enviar("s 0")
         while motor_control.enc["dist_cm"] > DIST_CARGA_CM:
@@ -424,6 +464,7 @@ def _consola(stop_ev):
 ║  ROBOT SEGUIDOR DE PISTA                     ║
 ║  go     → seguimiento autónomo               ║
 ║  stop   → detener                            ║
+║  ultra  → ver distancia ultrasonido          ║
 ║  fondo  → recapturar fondo de referencia     ║
 ║  test   → test de motores                    ║
 ║  exit   → salir                              ║
@@ -450,6 +491,11 @@ def _consola(stop_ev):
             camara_detector.estado["ignorar_roja"] = False
             motor_control.enviar("s 0")
             print(f"{C.OK}[OK] Detenido.{C.RESET}")
+
+        elif cmd == "ultra":
+            dist = motor_control.enc.get("dist_cm", 999)
+            carga = dist <= DIST_CARGA_CM
+            print(f"  Distancia: {dist}cm — {'CARGA DETECTADA' if carga else 'sin carga'} (umbral: {DIST_CARGA_CM}cm)")
 
         elif cmd == "fondo":
             camara_detector.resetear_fondo()

@@ -67,10 +67,11 @@ ROI_ALTO   = 0.40
 # ══════════════════════════════════════════════
 #  PUNTO DE REFERENCIA LÍNEA ÚNICA
 # ══════════════════════════════════════════════
-REF_SOLO_AMARILLA    = 0.05
-REF_SOLO_ROJA_RECTA  = 0.95   # punto objetivo roja en recta
-REF_SOLO_ROJA_CURVA  = 0.70   # punto objetivo roja en curva — ajustar según pista
-UMBRAL_INCLINACION   = 30     # inclinación mínima para detectar curva (ajustar)
+OFFSET_CENTRO = 50   # px — desplaza el centro hacia la amarilla (+ = más a la izq)
+REF_SOLO_AMARILLA    = 0.25
+REF_SOLO_ROJA_RECTA  = 0.95  # punto objetivo roja en recta
+REF_SOLO_ROJA_CURVA  = 0.50   # punto objetivo roja en curva — ajustar según pista
+UMBRAL_INCLINACION   = 90 # inclinación mínima para detectar curva (ajustar)
 
 # ══════════════════════════════════════════════
 #  ZONA DE DETECCIÓN DE OBSTÁCULOS
@@ -84,7 +85,7 @@ UMBRAL_BLOQUEO       = 0.35
 #  CALIBRACIÓN Y DETECCIÓN DE OBSTÁCULOS (BGR)
 # ══════════════════════════════════════════════
 OBS_FRAMES      = 60
-OBS_UMBRAL_DIFF = 30
+OBS_UMBRAL_DIFF = 90
 OBS_AREA_MIN    = 800
 
 # ══════════════════════════════════════════════
@@ -113,6 +114,7 @@ estado = {
     "ultimo_tag":          None,
     "ignorar_roja":        False,
     "solo_roja":           False,
+    "en_curva":            False,
 }
 estado_lock = threading.Lock()
 
@@ -255,7 +257,8 @@ def detectar_y_dibujar_lineas(frame):
 
     error = None
     if fx_r is not None and fx_a is not None:
-        cx_franja = (fx_r + fx_a) // 2
+        OFFSET_CENTRO = 75
+        cx_franja = (fx_r + fx_a) // 2 - (OFFSET_CENTRO if not en_curva else 0)
         curva_txt = "CURVA" if en_curva else "RECTA"
         cv2.circle(frame, (fx_r,      ref_inf), 6,  C_LINEA_ROJA,     -1)
         cv2.circle(frame, (fx_a,      ref_inf), 6,  C_LINEA_AMARILLA, -1)
@@ -290,6 +293,7 @@ def detectar_y_dibujar_lineas(frame):
 
     with estado_lock:
         estado["solo_roja"] = (fx_r is not None and fx_a is None)
+        estado["en_curva"]  = en_curva
     cv2.line(frame, (w//2, oy), (w//2, oy_fin), (70, 70, 70), 1)
     cv2.rectangle(frame, (0, oy), (w, oy_fin), (40, 40, 40), 1)
     return frame, error

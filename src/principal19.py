@@ -1,3 +1,106 @@
+skiper87
+skiper87
+aun sin cobre litio argon
+
+Ken — 09/05/2026 19:26
+
+skiper87 — 09/05/2026 19:27
+?
+skiper87 — 27/05/2026 19:43
+GIROS = {
+    "derecha_interseccion": {
+        "delay_ms":    9600,
+        "recto_ms":    0,
+        "vel":         60,
+        "duracion_ms": 1300,
+    },
+    "derecha_salida": {
+        "delay_ms":    1000,
+        "recto_ms":    10000,
+        "vel":         60,
+        "duracion_ms": 900,
+    },
+}
+
+══════════════════════════════════════════════
+PARÁMETROS DE CARGA
+antes_ms: navega con PID tras leer tag 1 antes de detenerse
+espera_ms: tiempo detenido esperando la carga
+══════════════════════════════════════════════
+DELAY_ANTES_CARGA_MS = 9950
+DELAY_CARGA_MS       = 5000
+
+#══════════════════════════════════════════════
+#PARÁMETROS DE DESCARGA
+#antes_ms: navega con PID tras leer el tag antes de detenerse
+#espera_ms: tiempo detenido en la descarga
+#══════════════════════════════════════════════
+DELAY_ANTES_DESCARGA_1_MS = 13000
+DELAY_DESCARGA_1_MS       = 7000
+
+DELAY_ANTES_DESCARGA_2_MS = 9000
+DELAY_DESCARGA_2_MS       = 7000
+
+DELAY_ANTES_DESCARGA_3_MS = 12000
+DELAY_DESCARGA_3_MS       = 7000
+skiper87 — 27/05/2026 21:53
+/*
+ * =========================================================
+ *  Robot Diferencial JGY370 — Firmware ESP32
+ *  ESP32 Arduino Core v3.x
+ * =========================================================
+ *
+
+message.txt
+11 KB
+skiper87 — 28/05/2026 20:11
+AAAAAAA
+Ken — 28/05/2026 21:09
+/*
+ * =========================================================
+ *  Robot Diferencial JGY370 — Firmware ESP32
+ *  ESP32 Arduino Core v3.x
+ * =========================================================
+ *
+
+message.txt
+8 KB
+skiper87 — 28/05/2026 21:46
+/*
+ * =========================================================
+ *  Robot Diferencial JGY370 — Firmware ESP32
+ * =========================================================
+ *
+ *  PROTOCOLO SERIAL (115200 baud):
+
+message.txt
+6 KB
+Ken — 17:25
+"""
+principal.py — Código principal robot seguidor de pista
+========================================================
+Comandos:
+  go     → seguimiento autónomo
+  stop   → detener
+
+message.txt
+26 KB
+"""
+camara_detector.py — Librería detector de pista
+================================================
+Uso como librería:
+    import camara_detector
+    camara_detector.iniciar()
+
+message.txt
+26 KB
+﻿
+Ken
+souls_fan_1986
+ 
+ 
+-Fan de FromSoftware
+-Seguidor de signalis.
 """
 principal.py — Código principal robot seguidor de pista
 ========================================================
@@ -14,8 +117,8 @@ import time
 import sys
 import argparse
 
-import camara_detector
-import motor_control
+import camara_detector27 as camara_detector
+import motor_control9 as motor_control
 
 try:
     import RPi.GPIO as GPIO
@@ -81,9 +184,9 @@ def _iniciar_ultra():
 KP_DIR           = 0.08
 KP_DIR_SOLO_ROJA = 0.15   # ganancia cuando solo ve la roja
 OFFSET_CURVA     = 50     # offset en px al estar en curva viendo solo roja
-VEL_BASE         = 70
+VEL_BASE         = 50
 VEL_MIN          = 25
-VEL_MAX          = 80
+VEL_MAX          = 75
 INTERVALO_S      = 0.1
 
 # ══════════════════════════════════════════════
@@ -95,18 +198,18 @@ INTERVALO_S      = 0.1
 # ══════════════════════════════════════════════
 GIROS = {
     "derecha_interseccion": {
-        "delay_ms":    4800,
+        "delay_ms":    9900,
         "delay_mm":    None,  # si tiene valor usa encoders en lugar de ms
         "recto_ms":    0,
         "vel":         60,
-        "duracion_ms": 700,
+        "duracion_ms": 1100,
     },
     "derecha_salida": {
-        "delay_ms":    1000,
+        "delay_ms":    100,
         "delay_mm":    None,
-        "recto_ms":    9200,
+        "recto_ms":    13000,
         "vel":         60,
-        "duracion_ms": 900,
+        "duracion_ms": 1000,
     },
 }
 
@@ -115,7 +218,8 @@ GIROS = {
 #  antes_ms: navega con PID tras leer tag 1 antes de detenerse
 #  espera_ms: tiempo detenido esperando la carga
 # ══════════════════════════════════════════════
-DELAY_ANTES_CARGA_MS = 3000
+DELAY_ANTES_CARGA_MS = 2650
+ANTES_CARGA_MM       = 2040   # si tiene valor usa encoders en lugar de ms
 DELAY_CARGA_MS       = 5000
 
 # ══════════════════════════════════════════════
@@ -124,25 +228,24 @@ DELAY_CARGA_MS       = 5000
 #  antes_mm: distancia en mm antes de detenerse (tiene prioridad sobre antes_ms)
 #  espera_ms: tiempo detenido en la descarga
 # ══════════════════════════════════════════════
-DELAY_ANTES_DESCARGA_1_MS = 3000
-ANTES_DESCARGA_1_MM       = None  # ej: 500 para usar encoders en lugar de ms
+DELAY_ANTES_DESCARGA_1_MS = 2400
+ANTES_DESCARGA_1_MM       = 2100  # ej: 500 para usar encoders en lugar de ms
 DELAY_DESCARGA_1_MS       = 7000
 
-DELAY_ANTES_DESCARGA_2_MS = 3000
-ANTES_DESCARGA_2_MM       = None
+DELAY_ANTES_DESCARGA_2_MS = 000
+ANTES_DESCARGA_2_MM       = 1750
 DELAY_DESCARGA_2_MS       = 7000
 
 DELAY_ANTES_DESCARGA_3_MS = 3000
-ANTES_DESCARGA_3_MM       = None
+ANTES_DESCARGA_3_MM       = 2050
 DELAY_DESCARGA_3_MS       = 7000
 
-# ══════════════════════════════════════════════
 #  PARÁMETROS ULTRASONIDO
 #  DIST_CARGA_CM:   distancia en cm para detectar carga presente
 #  DELAY_POST_CARGA_MS:   delay tras detectar carga antes de arrancar
 #  DELAY_POST_DESCARGA_MS: delay tras detectar que no hay carga antes de arrancar
 # ══════════════════════════════════════════════
-DIST_CARGA_CM          = 10    # objeto a menos de 10cm = carga presente
+DIST_CARGA_CM          = 5    # objeto a menos de 10cm = carga presente
 DELAY_POST_CARGA_MS    = 2000  # espera tras detectar carga
 DELAY_POST_DESCARGA_MS = 2000  # espera tras detectar que no hay carga
 
@@ -150,7 +253,7 @@ DELAY_POST_DESCARGA_MS = 2000  # espera tras detectar que no hay carga
 #  TIEMPO RECTO SIN LÍNEAS
 # ══════════════════════════════════════════════
 TIEMPO_RECTO_SIN_LINEA_S = 2.0
-
+FRAMES_SIN_TAG           = 5
 # ══════════════════════════════════════════════
 #  SECUENCIA MISIÓN 1 (descarga #1 — carril central)
 # ══════════════════════════════════════════════
@@ -289,6 +392,16 @@ def _esperar_tag(tag_id):
             t_sin_linea = None
         time.sleep(0.02)
 
+def _esperar_recta():
+    """Navega hasta que detecte que está en recta. Retorna False si se detiene."""
+    while True:
+        with _autonomo_lock:
+            if not _autonomo:
+                return False
+        if not camara_detector.estado.get("en_curva", False):
+            return True
+        _navegar_normal()
+        time.sleep(0.02)
 
 def _esperar_sin_tag(tag_id):
     """Navega hasta que el tag deja de verse. Retorna False si se detiene."""
@@ -371,11 +484,27 @@ def _ejecutar_descarga(numero, tag_id):
                        DELAY_DESCARGA_2_MS,
                        DELAY_DESCARGA_3_MS][numero]
 
-    print(f"{C.WARN}[DESCARGA {numero}] Esperando pasar el tag...{C.RESET}")
-    _esperar_sin_tag(tag_id)
+    print(f"{C.WARN}[DESCARGA {numero}] Esperando pasar tag y estar en recta...{C.RESET}")
+    contador_sin_tag = 0
+    tag_desaparecio  = False
+    while True:
+        with _autonomo_lock:
+            if not _autonomo:
+                return
+        tag_actual = camara_detector.estado["ultimo_tag"]
+        en_curva   = camara_detector.estado.get("en_curva", False)
+        if tag_actual != tag_id:
+            contador_sin_tag += 1
+            if contador_sin_tag >= FRAMES_SIN_TAG:
+                tag_desaparecio = True
+        else:
+            contador_sin_tag = 0
+        if tag_desaparecio and not en_curva:
+            break
+        _navegar_normal()
+        time.sleep(0.02)
 
     if antes_mm is not None:
-        # Usar encoders para la distancia
         print(f"{C.WARN}[DESCARGA {numero}] Navegando {antes_mm}mm con encoders{C.RESET}")
         M1_MM = (2 * 3.14159 * 30.0) / 3816
         M2_MM = (2 * 3.14159 * 30.0) / 2689
@@ -399,10 +528,16 @@ def _ejecutar_descarga(numero, tag_id):
 
     print(f"{C.WARN}[DESCARGA {numero}] Esperando retirar carga — ultrasonido > {DIST_CARGA_CM}cm{C.RESET}")
     motor_control.enviar("s 0")
-    while ultra_dist() <= DIST_CARGA_CM:
+    LECTURAS_SIN_CARGA = 5   # lecturas consecutivas sin carga para continuar
+    contador = 0
+    while contador < LECTURAS_SIN_CARGA:
         with _autonomo_lock:
             if not _autonomo:
                 return
+        if ultra_dist() > DIST_CARGA_CM:
+            contador += 1
+        else:
+            contador = 0
         time.sleep(0.05)
     print(f"{C.WARN}[DESCARGA {numero}] Carga retirada — esperando {DELAY_POST_DESCARGA_MS}ms{C.RESET}")
     _sleep_con_obstaculos(DELAY_POST_DESCARGA_MS / 1000.0)
@@ -428,8 +563,28 @@ def _hilo_autonomo(stop_ev):
         # FASE 2: navegar hasta dejar de ver tag 1 y esperar carga
         print(f"{C.WARN}[CARGA] Esperando pasar el tag...{C.RESET}")
         _esperar_sin_tag(1)
-        print(f"{C.WARN}[CARGA] Navegando al punto — {DELAY_ANTES_CARGA_MS}ms{C.RESET}")
-        _navegar_pid(DELAY_ANTES_CARGA_MS / 1000.0)
+        if ANTES_CARGA_MM is not None:
+            M1_MM = (2 * 3.14159 * 30.0) / 3816
+            M2_MM = (2 * 3.14159 * 30.0) / 2689
+            obj1  = ANTES_CARGA_MM / M1_MM
+            obj2  = ANTES_CARGA_MM / M2_MM
+            c1_0  = motor_control.enc["c1"]
+            c2_0  = motor_control.enc["c2"]
+            print(f"{C.WARN}[CARGA] Esperando recta...{C.RESET}")
+            _esperar_recta()
+            while True:
+                with _autonomo_lock:
+                    if not _autonomo:
+                        break
+                d1 = abs(motor_control.enc["c1"] - c1_0)
+                d2 = abs(motor_control.enc["c2"] - c2_0)
+                if (d1 / obj1 + d2 / obj2) / 2 >= 1.0:
+                    break
+                _navegar_normal()
+                time.sleep(0.02)
+        else:
+            print(f"{C.WARN}[CARGA] Navegando al punto — {DELAY_ANTES_CARGA_MS}ms{C.RESET}")
+            _navegar_pid(DELAY_ANTES_CARGA_MS / 1000.0)
         print(f"{C.WARN}[CARGA] Esperando carga — ultrasonido < {DIST_CARGA_CM}cm{C.RESET}")
         motor_control.enviar("s 0")
         while ultra_dist() > DIST_CARGA_CM:
@@ -445,7 +600,7 @@ def _hilo_autonomo(stop_ev):
         print(f"{C.INFO}[AUTO] Esperando tag de misión...{C.RESET}")
         secuencia  = None
         tag_mision = None
-        tag_ant    = camara_detector.estado.get("ultimo_tag")
+        tag_ant    = None
         while secuencia is None:
             with _autonomo_lock:
                 if not _autonomo:

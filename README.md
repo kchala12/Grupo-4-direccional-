@@ -40,7 +40,7 @@ Contiene toda la documentación formal del proyecto: matriz de documentos, crono
 Aquí se encuentran los esquemas eléctricos del sistema, diagramas de conexión de los componentes, diseños de PCB, selección y hoja de datos de los actuadores y drivers utilizados. También incluye el firmware de los microcontroladores encargados del control de motores y señales de los sensores.
  
 ### 📁 [Mecanica](https://github.com/kchala12/Grupo-4-direccional-/tree/main/Mecanica)
-Contiene los diseños CAD del chasis del robot, planos técnicos de las piezas fabricadas o impresas en 3D, ensamblajes del sistema de tracción, soporte de carga y montaje de la cámara. Incluye también los archivos de simulación estructural y las memorias de cálculo de resistencia y peso.
+Contiene los diseños CAD del chasis del robot, planos técnicos de las piezas fabricadas o impresas en 3D, ensamblajes del sistema de tracción, soporte de carga y montaje de la cámara. 
  
 ### 📁 [src](https://github.com/kchala12/Grupo-4-direccional-/tree/main/src)
 Código fuente principal del sistema autónomo. Incluye los módulos de visión artificial para la detección de códigos QR, algoritmos de navegación y control de trayectoria, lógica de gestión de estaciones y comunicación entre subsistemas. Todo desarrollado en Python sobre Raspberry Pi 5.

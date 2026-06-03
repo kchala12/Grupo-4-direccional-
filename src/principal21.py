@@ -135,12 +135,12 @@ GIROS = {
         "delay_mm":    1200,
         "recto_ms":    0,
         "vel":         60,
-        "duracion_ms": 1300,
+        "duracion_ms": 1200,
     },
     "derecha_salida": {
         "delay_ms":    100,
         "delay_mm":    None,
-        "recto_ms":    14000,
+        "recto_ms":    13000,
         "vel":         60,
         "duracion_ms": 1000,
     },
@@ -151,28 +151,28 @@ GIROS = {
 #  _MM tiene prioridad sobre _MS si no es None
 # ══════════════════════════════════════════════
 DELAY_ANTES_IR_CARGA_MS = 2000
-DELAY_ANTES_IR_CARGA_MM = None
+DELAY_ANTES_IR_CARGA_MM = 200
 DELAY_POST_IR_CARGA_MS  = 200
-DELAY_POST_IR_CARGA_MM  = None
+DELAY_POST_IR_CARGA_MM  = 35
 
 # ══════════════════════════════════════════════
 #  PARÁMETROS DE DESCARGA
 #  _MM tiene prioridad sobre _MS si no es None
 # ══════════════════════════════════════════════
 DELAY_ANTES_IR_DESCARGA_1_MS = 17000
-DELAY_ANTES_IR_DESCARGA_1_MM = None
+DELAY_ANTES_IR_DESCARGA_1_MM = 1700
 DELAY_POST_IR_DESCARGA_1_MS  = 750
-DELAY_POST_IR_DESCARGA_1_MM  = None
+DELAY_POST_IR_DESCARGA_1_MM  = 75
 
 DELAY_ANTES_IR_DESCARGA_2_MS = 16000
-DELAY_ANTES_IR_DESCARGA_2_MM = None
+DELAY_ANTES_IR_DESCARGA_2_MM = 1600
 DELAY_POST_IR_DESCARGA_2_MS  = 800
-DELAY_POST_IR_DESCARGA_2_MM  = None
+DELAY_POST_IR_DESCARGA_2_MM  = 80
 
 DELAY_ANTES_IR_DESCARGA_3_MS = 17500
-DELAY_ANTES_IR_DESCARGA_3_MM = None
+DELAY_ANTES_IR_DESCARGA_3_MM = 1750
 DELAY_POST_IR_DESCARGA_3_MS  = 800
-DELAY_POST_IR_DESCARGA_3_MM  = None
+DELAY_POST_IR_DESCARGA_3_MM  = 80
 
 # ══════════════════════════════════════════════
 #  PARÁMETROS ULTRASONIDO

@@ -16,7 +16,7 @@ import time
 import sys
 import argparse
 
-import camara_detector27 as camara_detector
+import camara_detector28 as camara_detector
 import motor_control9 as motor_control
 
 try:
@@ -140,9 +140,9 @@ GIROS = {
     "derecha_salida": {
         "delay_ms":    100,
         "delay_mm":    None,
-        "recto_ms":    13000,
+        "recto_ms":    14700,
         "vel":         60,
-        "duracion_ms": 1000,
+        "duracion_ms": 900,
     },
 }
 
@@ -151,26 +151,27 @@ GIROS = {
 #  _MM tiene prioridad sobre _MS si no es None
 # ══════════════════════════════════════════════
 DELAY_ANTES_IR_CARGA_MS = 2000
-DELAY_ANTES_IR_CARGA_MM = 200
+DELAY_ANTES_IR_CARGA_MM = 800
 DELAY_POST_IR_CARGA_MS  = 200
-DELAY_POST_IR_CARGA_MM  = 35
+DELAY_POST_IR_CARGA_MM  = 10
+
 
 # ══════════════════════════════════════════════
 #  PARÁMETROS DE DESCARGA
 #  _MM tiene prioridad sobre _MS si no es None
 # ══════════════════════════════════════════════
 DELAY_ANTES_IR_DESCARGA_1_MS = 17000
-DELAY_ANTES_IR_DESCARGA_1_MM = 1700
+DELAY_ANTES_IR_DESCARGA_1_MM = 1500
 DELAY_POST_IR_DESCARGA_1_MS  = 750
 DELAY_POST_IR_DESCARGA_1_MM  = 75
 
 DELAY_ANTES_IR_DESCARGA_2_MS = 16000
-DELAY_ANTES_IR_DESCARGA_2_MM = 1600
+DELAY_ANTES_IR_DESCARGA_2_MM = 1650
 DELAY_POST_IR_DESCARGA_2_MS  = 800
-DELAY_POST_IR_DESCARGA_2_MM  = 80
+DELAY_POST_IR_DESCARGA_2_MM  = 95
 
 DELAY_ANTES_IR_DESCARGA_3_MS = 17500
-DELAY_ANTES_IR_DESCARGA_3_MM = 1750
+DELAY_ANTES_IR_DESCARGA_3_MM = 1400
 DELAY_POST_IR_DESCARGA_3_MS  = 800
 DELAY_POST_IR_DESCARGA_3_MM  = 80
 
@@ -187,10 +188,10 @@ DELAY_POST_DESCARGA_MS = 6000
 #  negativo = acercarse a la amarilla
 #  None = usar OFFSET_CENTRO_DEFAULT
 # ══════════════════════════════════════════════
-OFFSET_LINEA_CARGA  = 120
-OFFSET_LINEA_DESC_1 = None
-OFFSET_LINEA_DESC_2 = 40
-OFFSET_LINEA_DESC_3 = None
+OFFSET_LINEA_CARGA  = 70
+OFFSET_LINEA_DESC_1 = 50
+OFFSET_LINEA_DESC_2 = 50
+OFFSET_LINEA_DESC_3 = 70
 
 # ══════════════════════════════════════════════
 #  TIEMPO RECTO SIN LÍNEAS / FRAMES SIN TAG
@@ -682,5 +683,5 @@ def main():
         print(f"{C.INFO}Hasta luego.{C.RESET}")
 
 
-if __name__ == "__main__":
+if _name_ == "_main_":
     main()

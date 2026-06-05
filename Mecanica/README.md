@@ -23,8 +23,6 @@ Dibujos técnicos con cotas de piezas y objetos complementarios del ensamblaje. 
 Los archivos de esta carpeta fueron desarrollados con herramientas CAD. Se recomienda usar alguno de los siguientes programas para visualizarlos y editarlos:
 
 - [Fusion 360](https://www.autodesk.com/products/fusion-360/) — Modelado 3D y simulación
-- [SolidWorks](https://www.solidworks.com/) — Diseño mecánico profesional
-- [FreeCAD](https://www.freecad.org/) — Alternativa libre y gratuita
 
 ---
 
